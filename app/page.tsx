@@ -1,18 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DBConnectionForm } from "@/components/db-connection-form"
 import { TableSelector } from "@/components/table-selector"
 import { TableDefinitionViewer } from "@/components/table-definition-viewer"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { DBConnection, TableInfo, TableDefinition } from "@/lib/types"
-import { Database, Download, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Download, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { UserMenu } from "@/components/user-menu"
+import type { User } from "@supabase/supabase-js"
 
 type Step = "connect" | "select" | "view"
 
 export default function Home() {
   const [step, setStep] = useState<Step>("connect")
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+  }, [])
   const [connection, setConnection] = useState<DBConnection | null>(null)
   const [tables, setTables] = useState<TableInfo[]>([])
   const [definitions, setDefinitions] = useState<TableDefinition[]>([])
@@ -116,58 +127,84 @@ export default function Home() {
     setError(null)
   }
 
+  const steps = [
+    { key: "connect" as const, label: "DB 연결", num: "1" },
+    { key: "select" as const, label: "테이블 선택", num: "2" },
+    { key: "view" as const, label: "정의서 조회", num: "3" },
+  ]
+
+  const stepOrder = ["connect", "select", "view"] as const
+  const currentIdx = stepOrder.indexOf(step)
+
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      {/* Header */}
+      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Database className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-semibold">TableDefiner</h1>
-            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-              데모 모드
+            <img src="/t3qlogo.png" alt="T3Q 로고" className="h-7 w-auto" />
+            <div className="w-px h-5 bg-border" />
+            <h1 className="text-lg font-semibold tracking-tight">Schema-DOC</h1>
+            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+              Demo
             </span>
           </div>
-          {step !== "connect" && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                뒤로
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                새 연결
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {step !== "connect" && (
+              <>
+                <Button variant="ghost" size="sm" onClick={handleBack}>
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  뒤로
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  새 연결
+                </Button>
+              </>
+            )}
+            {user && (
+              <UserMenu
+                email={user.email ?? ""}
+                avatarUrl={user.user_metadata?.avatar_url}
+              />
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Progress indicator */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <div className={`flex items-center gap-2 ${step === "connect" ? "text-primary" : "text-muted-foreground"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === "connect" ? "bg-primary text-primary-foreground" : step !== "connect" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-              {step !== "connect" ? <CheckCircle2 className="h-5 w-5" /> : "1"}
-            </div>
-            <span className="text-sm font-medium">연결</span>
-          </div>
-          <div className="w-12 h-px bg-border" />
-          <div className={`flex items-center gap-2 ${step === "select" ? "text-primary" : "text-muted-foreground"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === "select" ? "bg-primary text-primary-foreground" : step === "view" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-              {step === "view" ? <CheckCircle2 className="h-5 w-5" /> : "2"}
-            </div>
-            <span className="text-sm font-medium">선택</span>
-          </div>
-          <div className="w-12 h-px bg-border" />
-          <div className={`flex items-center gap-2 ${step === "view" ? "text-primary" : "text-muted-foreground"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === "view" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-              3
-            </div>
-            <span className="text-sm font-medium">조회</span>
-          </div>
+      <div className="container mx-auto px-6 py-10">
+        {/* Stepper */}
+        <div className="flex items-center justify-center gap-0 mb-10 max-w-lg mx-auto">
+          {steps.map((s, i) => {
+            const isDone = currentIdx > i
+            const isActive = step === s.key
+            return (
+              <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                    isDone ? "bg-primary text-primary-foreground" :
+                    isActive ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {isDone ? <CheckCircle2 className="h-5 w-5" /> : s.num}
+                  </div>
+                  <span className={`text-xs font-medium transition-colors ${
+                    isActive ? "text-primary" :
+                    isDone ? "text-foreground" :
+                    "text-muted-foreground"
+                  }`}>{s.label}</span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-3 mb-5 rounded-full transition-colors ${
+                    currentIdx > i ? "bg-primary" : "bg-border"
+                  }`} />
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
+          <Alert variant="destructive" className="mb-8 max-w-xl mx-auto">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>오류</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
@@ -188,12 +225,13 @@ export default function Home() {
           )}
 
           {step === "view" && (
-            <div className="w-full max-w-6xl flex flex-col gap-4">
+            <div className="w-full max-w-6xl flex flex-col gap-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  테이블 정의서 ({definitions.length}개 테이블)
-                </h2>
-                <Button onClick={handleExportExcel} disabled={isExporting}>
+                <div>
+                  <h2 className="text-lg font-semibold">테이블 정의서</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">{definitions.length}개 테이블</p>
+                </div>
+                <Button onClick={handleExportExcel} disabled={isExporting} className="rounded-full px-5">
                   <Download className="mr-2 h-4 w-4" />
                   {isExporting ? "내보내는 중..." : "Excel 다운로드"}
                 </Button>
@@ -203,6 +241,13 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t mt-auto py-4">
+        <div className="container mx-auto px-6 text-center text-xs text-muted-foreground">
+          T3Q Schema-DOC
+        </div>
+      </footer>
     </main>
   )
 }

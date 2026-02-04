@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { DBConnection } from "@/lib/types"
-import { Database, Loader2 } from "lucide-react"
+import { Database, Loader2, Server } from "lucide-react"
 
 interface DBConnectionFormProps {
   onConnect: (connection: DBConnection) => Promise<void>
@@ -30,12 +30,12 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          MariaDB 연결
-        </CardTitle>
+    <Card className="w-full max-w-md shadow-sm border-border/60">
+      <CardHeader className="pb-4">
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+          <Database className="h-5 w-5 text-primary" />
+        </div>
+        <CardTitle className="text-lg">MariaDB 연결</CardTitle>
         <CardDescription>
           스키마 정보를 조회할 MariaDB 서버에 연결합니다.
         </CardDescription>
@@ -43,19 +43,23 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="host">호스트</Label>
-              <Input
-                id="host"
-                type="text"
-                value={connection.host}
-                onChange={(e) => setConnection({ ...connection, host: e.target.value })}
-                placeholder="localhost"
-                required
-              />
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="host" className="text-xs font-medium text-muted-foreground">호스트</Label>
+              <div className="relative">
+                <Server className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  id="host"
+                  type="text"
+                  value={connection.host}
+                  onChange={(e) => setConnection({ ...connection, host: e.target.value })}
+                  placeholder="localhost"
+                  className="pl-9"
+                  required
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="port">포트</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="port" className="text-xs font-medium text-muted-foreground">포트</Label>
               <Input
                 id="port"
                 type="number"
@@ -66,8 +70,8 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
               />
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="user">사용자명</Label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="user" className="text-xs font-medium text-muted-foreground">사용자명</Label>
             <Input
               id="user"
               type="text"
@@ -77,8 +81,8 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
               required
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">비밀번호</Label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">비밀번호</Label>
             <Input
               id="password"
               type="password"
@@ -87,8 +91,8 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
               placeholder="********"
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="database">데이터베이스</Label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="database" className="text-xs font-medium text-muted-foreground">데이터베이스</Label>
             <Input
               id="database"
               type="text"
@@ -98,14 +102,14 @@ export function DBConnectionForm({ onConnect, isConnecting }: DBConnectionFormPr
               required
             />
           </div>
-          <Button type="submit" disabled={isConnecting} className="mt-2">
+          <Button type="submit" disabled={isConnecting} className="mt-3 rounded-full">
             {isConnecting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 연결 중...
               </>
             ) : (
-              "연결"
+              "연결하기"
             )}
           </Button>
         </form>
